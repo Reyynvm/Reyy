@@ -1,41 +1,517 @@
 <!DOCTYPE html>
-<html lang="id">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="keywords" content="html, CSS">
-    <meta name="description" content="...">
-    <title>Testing</title>
+    <title>Minecraft x Persona RPG</title>
     <style>
-        img {
-            width: 200px;
-            border-radius: 20px;
-            float: left;
-            margin-right: 10px;
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --mc-green: #55aa33;
+            --mc-dirt: #866043;
+            --persona-red: #ff0000;
+            --persona-dark: #1a1a1a;
+            --persona-white: #eeeeee;
+            --gold: #f1c40f;
         }
 
-        .User {
-            font-weight: bold;
-            font-size: 25px;
-
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
-        .Type {
+        #game-view {
+            width: 800px;
+            height: 600px;
+            border: 8px solid #333;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+            background: var(--persona-dark);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* --- Main Menu --- */
+        #main-menu {
+            background: linear-gradient(135deg, var(--persona-red) 0%, #000 100%);
+        }
+
+        .title-container {
+            transform: rotate(-5deg);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .game-title {
+            font-size: 35px;
+            background: white;
             color: black;
+            padding: 10px 20px;
+            display: inline-block;
+            box-shadow: 10px 10px 0px var(--persona-dark);
         }
+
+        .stats-bar-top {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            font-size: 12px;
+        }
+
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-self: flex-start;
+            margin-left: 80px;
+        }
+
+        .menu-btn {
+            background: white;
+            color: black;
+            border: none;
+            padding: 12px 35px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: left;
+            transform: skew(-15deg);
+            transition: all 0.2s;
+            width: 280px;
+        }
+
+        .menu-btn:hover {
+            background: var(--persona-red);
+            color: white;
+            transform: skew(-15deg) scale(1.1) translateX(20px);
+        }
+
+        /* --- Battle Screen --- */
+        #adventure-screen {
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #55aa33 70%, #55aa33 100%);
+        }
+
+        #battle-log {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 4px solid #fff;
+            padding: 15px;
+            font-size: 10px;
+            line-height: 1.5;
+            z-index: 10;
+        }
+
+        #command-menu {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transform: skew(-10deg);
+            z-index: 20;
+        }
+
+        .btn-command {
+            background: var(--persona-red);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            box-shadow: 4px 4px 0px #fff;
+            width: 250px;
+        }
+
+        .btn-command:hover:not(:disabled) {
+            background: white;
+            color: var(--persona-red);
+            transform: scale(1.05) translateX(5px);
+        }
+
+        .btn-command:disabled { opacity: 0.5; }
+
+        /* --- Shop Screen --- */
+        #shop-screen {
+            background: #2c3e50;
+        }
+
+        .shop-container {
+            background: white;
+            color: black;
+            padding: 30px;
+            width: 80%;
+            box-shadow: 10px 10px 0px var(--gold);
+        }
+
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ccc;
+            padding: 15px 0;
+        }
+
+        .shop-price { color: var(--persona-red); font-weight: bold; }
+
+        /* --- Characters --- */
+        .character { position: absolute; transition: transform 0.3s, filter 0.2s; }
+        #player-sprite { bottom: 120px; left: 150px; width: 100px; height: 180px; background-color: #31a2af; border: 4px solid #000; }
+        #player-sprite::before { content: ''; position: absolute; top: -60px; left: 10px; width: 80px; height: 80px; background-color: #ebc090; border: 4px solid #000; }
+        #enemy-sprite { bottom: 120px; right: 150px; width: 100px; height: 180px; border: 4px solid #000; }
+        #enemy-sprite.creeper { background-color: #4CAF50; }
+        #enemy-sprite.zombie { background-color: #2e4d15; }
+        #enemy-sprite.enderman { background-color: #161616; height: 240px; width: 60px; }
+        #enemy-sprite::before { content: ''; position: absolute; top: -70px; left: 5px; width: 90px; height: 90px; background-color: inherit; border: 4px solid #000; }
+        #enemy-sprite.enderman::before { width: 60px; height: 60px; left: 0; top: -60px; }
+
+        /* --- Stats --- */
+        .stats-panel {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-left: 8px solid var(--persona-red);
+            width: 220px;
+            font-size: 10px;
+        }
+
+        .hp-bar-container { width: 100%; height: 15px; background: #444; margin: 8px 0; border: 2px solid #fff; }
+        .hp-bar-fill { height: 100%; background: #ff0000; width: 100%; transition: width 0.5s ease-out; }
+
+        /* --- Animations & Overlays --- */
+        #victory-screen { background: rgba(0,0,0,0.9); z-index: 100; }
+        #defeat-screen { background: rgba(139,0,0,0.9); z-index: 100; }
+        .result-title { font-size: 50px; margin-bottom: 20px; text-shadow: 5px 5px 0px #000; }
+        .victory-text { color: var(--gold); }
+        .back-btn { margin-top: 20px; background: black; color: white; border: none; padding: 15px 30px; font-family: 'Press Start 2P'; cursor: pointer; }
+        
+        .damage-popup { position: absolute; color: yellow; font-weight: bold; font-size: 20px; z-index: 100; animation: fade-up 1s forwards; text-shadow: 2px 2px 0px #000; }
+        @keyframes fade-up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
+        
+        @keyframes attack-player { 0% { transform: translateX(0); } 50% { transform: translateX(300px); } 100% { transform: translateX(0); } }
+        .animate-attack-p { animation: attack-player 0.4s ease-in-out; }
+        @keyframes attack-enemy { 0% { transform: translateX(0); } 50% { transform: translateX(-300px); } 100% { transform: translateX(0); } }
+        .animate-attack-e { animation: attack-enemy 0.4s ease-in-out; }
+        .shake { animation: shake 0.2s; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 75% { transform: translate(5px, -5px); } }
     </style>
 </head>
-
 <body>
-    <img src="image/Fandi.jpg" alt="Muka Fandi" />
-    <p class="User">@rafandi.4</p>
-    <p class="Type">Nama gue Rafandi Aberto, siswa kelas X-E6, umur gue 16 tahun. Gue punya hobi yang agak… ya, bisa
-        dibilang penuh perjuangan: main billiard. Tapi anehnya, setiap kali main sama Andi, entah kenapa gue selalu
-        kalah. Mungkin meja billiard-nya yang miring, atau stik gue yang kurang bersahabat—nggak tahu juga. Tapi ya,
-        meskipun kalah terus, gue tetep enjoy. Buat gue, serunya bukan soal menangnya, tapi kebersamaan dan tantangan
-        tiap game itu sendiri. Suatu saat, Andi harus siap-siap... gue bakal bales kekalahan ini!</p>
-    <a href="fandi2.html">Pencet</a>
-</body>
 
+    <div id="game-view">
+        <!-- TOP STATS -->
+        <div class="stats-bar-top">COIN: <span id="global-coin">0</span></div>
+
+        <!-- MENU UTAMA -->
+        <div id="main-menu" class="screen active">
+            <div class="title-container">
+                <div class="game-title">MINECRAFT<br>RPG</div>
+            </div>
+            <div class="menu-options">
+                <button class="menu-btn" onclick="startAdventure()">ADVENTURE</button>
+                <button class="menu-btn" onclick="openShop()">SHOP</button>
+                <button class="menu-btn" onclick="showScreen('settings-screen')">SETTING</button>
+                <button class="menu-btn" onclick="showScreen('credits-screen')">CREDITS</button>
+            </div>
+        </div>
+
+        <!-- SHOP SCREEN -->
+        <div id="shop-screen" class="screen">
+            <div class="shop-container">
+                <h2 style="text-align:center">VILLAGER SHOP</h2>
+                <hr>
+                <div class="shop-item" id="item-tnt">
+                    <div>
+                        <strong>TNT BLAST</strong><br>
+                        <small style="font-size:8px">Damage Area Tinggi (50-70 DMG)</small>
+                    </div>
+                    <div>
+                        <span class="shop-price">100 COIN</span><br>
+                        <button onclick="buySkill('tnt')" id="buy-tnt-btn" style="cursor:pointer; font-family:'Press Start 2P'; font-size:10px; margin-top:5px">BUY</button>
+                    </div>
+                </div>
+                <div style="text-align:center; margin-top:20px">
+                    <button class="back-btn" style="width:100%" onclick="showScreen('main-menu')">EXIT SHOP</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADVENTURE (BATTLE) -->
+        <div id="adventure-screen" class="screen">
+            <div id="battle-log">Menunggu musuh...</div>
+            <div id="player-sprite" class="character"></div>
+            <div id="enemy-sprite" class="character"></div>
+            <div id="command-menu">
+                <button class="btn-command" onclick="playerAction('attack')">⚔️ ATTACK</button>
+                <button class="btn-command" onclick="playerAction('skill')">✨ DIAMOND SWORD</button>
+                <button class="btn-command" id="btn-tnt" style="display:none; background:#d35400" onclick="playerAction('tnt')">💣 TNT BLAST</button>
+                <button class="btn-command" onclick="playerAction('item')">🍎 APPLE</button>
+                <button class="btn-command" onclick="playerAction('guard')">🛡️ GUARD</button>
+            </div>
+            <div class="stats-panel">
+                <div style="color:#00ffff">STEVE</div>
+                <div id="p-hp-t">HP: 100 / 100</div>
+                <div class="hp-bar-container"><div id="p-hp-b" class="hp-bar-fill"></div></div>
+                <br>
+                <div id="e-name" style="color:#ff0000">MUSUH</div>
+                <div id="e-hp-t">HP: 80 / 80</div>
+                <div class="hp-bar-container"><div id="e-hp-b" class="hp-bar-fill"></div></div>
+            </div>
+        </div>
+
+        <!-- VICTORY SCREEN -->
+        <div id="victory-screen" class="screen">
+            <h1 class="result-title victory-text">VICTORY</h1>
+            <p id="victory-msg">Musuh ditumbangkan!</p>
+            <h2 id="coin-reward" style="color:var(--gold)">+0 COIN</h2>
+            <button class="back-btn" onclick="showScreen('main-menu')">CONTINUE</button>
+        </div>
+
+        <!-- DEFEAT SCREEN -->
+        <div id="defeat-screen" class="screen">
+            <h1 class="result-title" style="color:white">YOU DIED</h1>
+            <p>Steve kehilangan semua energinya...</p>
+            <button class="back-btn" onclick="showScreen('main-menu')">RETRY</button>
+        </div>
+
+        <!-- PENGATURAN & KREDIT -->
+        <div id="settings-screen" class="screen">
+            <div class="overlay-content">
+                <h2>PENGATURAN</h2>
+                <p>Volume: 80%</p>
+                <button class="back-btn" onclick="showScreen('main-menu')">KEMBALI</button>
+            </div>
+        </div>
+        <div id="credits-screen" class="screen">
+            <div class="overlay-content">
+                <h2>KREDIT</h2>
+                <p>Project Lead:</p>
+                <h3 style="color:var(--persona-red)">REYYNER</h3>
+                <p>Asisten: Gemini</p>
+                <button class="back-btn" onclick="showScreen('main-menu')">KEMBALI</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mobs = [
+            { name: "Creeper", hp: 80, class: "creeper", attack: 25, msg: "Creeper berdesis...", coin: 30 },
+            { name: "Zombie", hp: 120, class: "zombie", attack: 15, msg: "Zombie mengerang...", coin: 40 },
+            { name: "Enderman", hp: 160, class: "enderman", attack: 35, msg: "Enderman berteleportasi!", coin: 60 }
+        ];
+
+        const state = {
+            player: { hp: 100, maxHp: 100, isGuarding: false, coins: 0, hasTNT: false },
+            enemy: { hp: 80, maxHp: 80, name: "", type: null },
+            isBusy: false
+        };
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            updateGlobalStats();
+        }
+
+        function updateGlobalStats() {
+            document.getElementById('global-coin').innerText = state.player.coins;
+        }
+
+        function openShop() {
+            showScreen('shop-screen');
+            const btn = document.getElementById('buy-tnt-btn');
+            if (state.player.hasTNT) {
+                btn.innerText = "OWNED";
+                btn.disabled = true;
+            }
+        }
+
+        function buySkill(skill) {
+            if (skill === 'tnt' && state.player.coins >= 100 && !state.player.hasTNT) {
+                state.player.coins -= 100;
+                state.player.hasTNT = true;
+                document.getElementById('btn-tnt').style.display = "block";
+                openShop();
+            } else if (state.player.coins < 100) {
+                alert("Coin tidak cukup!");
+            }
+        }
+
+        function startAdventure() {
+            const randomMob = mobs[Math.floor(Math.random() * mobs.length)];
+            state.enemy = { hp: randomMob.hp, maxHp: randomMob.hp, name: randomMob.name, type: randomMob };
+            state.player.hp = 100;
+            state.isBusy = false;
+            
+            const eSprite = document.getElementById('enemy-sprite');
+            eSprite.className = 'character ' + randomMob.class;
+            document.getElementById('e-name').innerText = randomMob.name.toUpperCase();
+            document.getElementById('e-hp-b').style.backgroundColor = randomMob.class === 'creeper' ? '#5a3' : (randomMob.class === 'zombie' ? '#2e4d15' : '#8e44ad');
+
+            showScreen('adventure-screen');
+            log(`Lawan baru: ${randomMob.name}!`);
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('p-hp-t').innerText = `HP: ${state.player.hp} / ${state.player.maxHp}`;
+            document.getElementById('p-hp-b').style.width = `${(state.player.hp / state.player.maxHp) * 100}%`;
+            document.getElementById('e-hp-t').innerText = `HP: ${state.enemy.hp} / ${state.enemy.maxHp}`;
+            document.getElementById('e-hp-b').style.width = `${(state.enemy.hp / state.enemy.maxHp) * 100}%`;
+            document.querySelectorAll('.btn-command').forEach(btn => btn.disabled = state.isBusy);
+            document.getElementById('btn-tnt').style.display = state.player.hasTNT ? "block" : "none";
+        }
+
+        function log(msg) { document.getElementById('battle-log').innerText = msg; }
+
+        function spawnDamage(text, isPlayer) {
+            const popup = document.createElement('div');
+            popup.className = 'damage-popup';
+            popup.innerText = text;
+            const target = isPlayer ? document.getElementById('player-sprite') : document.getElementById('enemy-sprite');
+            const rect = target.getBoundingClientRect();
+            popup.style.left = `${rect.left + 20}px`;
+            popup.style.top = `${rect.top - 20}px`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        async function playerAction(type) {
+            if (state.isBusy) return;
+            state.isBusy = true;
+            state.player.isGuarding = false;
+            updateUI();
+
+            const pSprite = document.getElementById('player-sprite');
+            const eSprite = document.getElementById('enemy-sprite');
+            
+            if (type === 'attack') {
+                log("Steve menyerang!");
+                pSprite.classList.add('animate-attack-p');
+                await sleep(300);
+                let dmg = 15 + Math.floor(Math.random() * 5);
+                state.enemy.hp = Math.max(0, state.enemy.hp - dmg);
+                eSprite.classList.add('shake');
+                spawnDamage(`-${dmg}`, false);
+                await sleep(200);
+                pSprite.classList.remove('animate-attack-p');
+                eSprite.classList.remove('shake');
+            } 
+            else if (type === 'skill') {
+                log("DIAMOND SWORD SLASH!!");
+                pSprite.classList.add('animate-attack-p');
+                await sleep(300);
+                let dmg = 35;
+                state.enemy.hp = Math.max(0, state.enemy.hp - dmg);
+                eSprite.classList.add('shake');
+                spawnDamage(`-${dmg}!!`, false);
+                await sleep(200);
+                pSprite.classList.remove('animate-attack-p');
+                eSprite.classList.remove('shake');
+            }
+            else if (type === 'tnt') {
+                log("MELEDAKKAN TNT!!!");
+                pSprite.style.filter = "brightness(2) contrast(2)";
+                await sleep(400);
+                let dmg = 60 + Math.floor(Math.random() * 10);
+                state.enemy.hp = Math.max(0, state.enemy.hp - dmg);
+                eSprite.classList.add('shake');
+                spawnDamage(`-${dmg} BOOM!`, false);
+                pSprite.style.filter = "none";
+            }
+            else if (type === 'item') {
+                log("Makan Golden Apple...");
+                state.player.hp = Math.min(100, state.player.hp + 40);
+                spawnDamage("+40", true);
+            } 
+            else if (type === 'guard') {
+                log("Steve bersiap menahan serangan!");
+                state.player.isGuarding = true;
+            }
+
+            updateUI();
+            if (state.enemy.hp <= 0) {
+                const reward = state.enemy.type.coin;
+                state.player.coins += reward;
+                document.getElementById('coin-reward').innerText = `+${reward} COIN`;
+                await sleep(800);
+                showScreen('victory-screen');
+                return;
+            }
+
+            await sleep(1000);
+            enemyTurn();
+        }
+
+        async function enemyTurn() {
+            log(state.enemy.type.msg);
+            const pSprite = document.getElementById('player-sprite');
+            const eSprite = document.getElementById('enemy-sprite');
+            await sleep(800);
+            eSprite.classList.add('animate-attack-e');
+            await sleep(300);
+
+            let dmg = state.enemy.type.attack;
+            if (state.player.isGuarding) {
+                dmg = Math.floor(dmg / 4);
+                log("Serangan berhasil ditahan!");
+            }
+            
+            state.player.hp = Math.max(0, state.player.hp - dmg);
+            pSprite.classList.add('shake');
+            spawnDamage(`-${dmg}`, true);
+            await sleep(200);
+            eSprite.classList.remove('animate-attack-e');
+            pSprite.classList.remove('shake');
+            updateUI();
+
+            if (state.player.hp <= 0) {
+                await sleep(800);
+                showScreen('defeat-screen');
+            } else {
+                state.isBusy = false;
+                updateUI();
+            }
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    </script>
+</body>
 </html>
